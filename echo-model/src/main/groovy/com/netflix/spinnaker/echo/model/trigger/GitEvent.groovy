@@ -36,6 +36,7 @@ class GitEvent extends TriggerEvent {
     String hash
     String branch
     List<Artifact> artifacts;
+    String triggerCorrelationId
   }
 
   @JsonIgnore
@@ -46,6 +47,11 @@ class GitEvent extends TriggerEvent {
   @JsonIgnore
   String getBranch() {
     return content.branch
+  }
+
+  @JsonIgnore
+  String getTriggerCorrelationId() {
+    return content.triggerCorrelationId
   }
 }
 

@@ -24,12 +24,7 @@ import com.netflix.spinnaker.echo.model.Metadata
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpHeaders
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestHeader
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestMethod
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 import static net.logstash.logback.argument.StructuredArguments.kv
 
@@ -47,7 +42,7 @@ class WebhooksController {
   ArtifactExtractor artifactExtractor
 
   @RequestMapping(value = '/webhooks/{type}/{source}', method = RequestMethod.POST)
-  void forwardEvent(@PathVariable String type,
+  WebhooksController.WebhookResponse forwardEvent(@PathVariable String type,
                     @PathVariable String source,
                     @RequestBody String rawPayload,
                     @RequestHeader HttpHeaders headers) {
@@ -68,6 +63,9 @@ class WebhooksController {
     }
     event.content = postedEvent
     event.payload = new HashMap(postedEvent)
+
+    // also should test {"artifacts": "lol"}
+    log.error("payload before everything: {}", event.payload)
 
     if (type == 'git') {
       if (source == 'stash') {
@@ -114,11 +112,19 @@ class WebhooksController {
       event.content.artifacts = artifactExtractor.extractArtifacts(type, source, event.payload)
     }
 
+    // Generate trigger correlation ID
+    String triggerCorrelationId = UUID.randomUUID().toString();
+    event.content.triggerCorrelationId = triggerCorrelationId
+
     log.info("Webhook ${type}:${source}:${event.content}")
 
     if (sendEvent) {
       propagator.processEvent(event)
     }
+
+    return sendEvent ?
+      WebhookResponse.newInstance(eventProcessed: true, triggerCorrelationId: triggerCorrelationId) :
+      WebhookResponse.newInstance(eventProcessed: false);
   }
 
   @RequestMapping(value = '/webhooks/{type}', method = RequestMethod.POST)
@@ -139,4 +145,10 @@ class WebhooksController {
 
     propagator.processEvent(event)
   }
+
+  static class WebhookResponse {
+    boolean eventProcessed;
+    String triggerCorrelationId;
+  }
+
 }

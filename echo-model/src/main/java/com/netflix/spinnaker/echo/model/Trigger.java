@@ -78,6 +78,13 @@ public class Trigger {
   String secret;
 
   /**
+   * ID that is returned by webhook controller that can be used to search for triggered pipeline
+   * executions.
+   */
+  String triggerCorrelationId;
+  String webhookId; // test
+
+  /**
    * Logical name given to the subscription by the user, not the locator
    * the pub/sub system uses.
    */
@@ -144,6 +151,12 @@ public class Trigger {
         .subscriptionName(subscriptionName)
         .pubsubSystem(pubsubSystem)
         .build();
+  }
+
+  public Trigger atTriggerCorrelationId(final String triggerCorrelationId) {
+    return this.toBuilder()
+      .triggerCorrelationId(triggerCorrelationId)
+      .build();
   }
 
   @JsonPOJOBuilder(withPrefix = "")
